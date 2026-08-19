@@ -45,10 +45,16 @@ sortedPosts.forEach(post => {
   const slug = post.slug || post.id;
   let category: string | undefined;
 
-  for (const [key, cat] of Object.entries(categoryMapping)) {
-    if (slug.includes(key)) {
-      category = cat;
-      break;
+  // Try to get category from post frontmatter first
+  if (post.data.category) {
+    category = post.data.category;
+  } else {
+    // Fall back to mapping for older posts
+    for (const [key, cat] of Object.entries(categoryMapping)) {
+      if (slug.includes(key)) {
+        category = cat;
+        break;
+      }
     }
   }
 
