@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import { getSortedPosts } from "@/utils/getSortedPosts";
+import { getPostSlug } from "@/utils/getPostPaths";
 
 const allPosts = await getCollection("posts", ({ data }) => !data.draft);
 const sortedPosts = getSortedPosts(allPosts);
@@ -13,10 +14,10 @@ const recentPosts = sortedPosts.slice(0, 10);
       <h3 class="widget-title">Recent Posts</h3>
       <ul class="recent-posts-list">
         {recentPosts.map(post => {
-          const postSlug = post.slug || post.id;
+          const postPath = getPostSlug(post.id, post.filePath);
           return (
             <li>
-              <a href={`/posts/${postSlug}`} class="recent-post-link">
+              <a href={`/posts${postPath}`} class="recent-post-link">
                 {post.data.title}
               </a>
             </li>
