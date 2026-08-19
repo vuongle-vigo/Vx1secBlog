@@ -24,15 +24,28 @@ export const getStaticPaths = (async ({ paginate }) => {
     "customizing-color-schemes": "Customization",
   };
 
-  // Get all unique categories from posts using mapping
-  const categories = new Set<string>();
-  sortedPosts.forEach(post => {
-    const slug = post.slug || post.id;
+  // Function to detect category (same as LeftSidebar)
+  const detectCategory = (slug: string): string | undefined => {
+    if (slug.includes("malware") || slug.includes("payload") || slug.includes("injection") ||
+        slug.includes("syscall") || slug.includes("hooking") || slug.includes("obfuscation") ||
+        slug.includes("encryption") || slug.includes("sideload") || slug.includes("unhook") ||
+        slug.includes("iat") || slug.includes("macro") || slug.includes("bypass")) {
+      return "Malware Analysis";
+    }
     for (const [key, cat] of Object.entries(categoryMapping)) {
       if (slug.includes(key)) {
-        categories.add(cat);
-        break;
+        return cat;
       }
+    }
+    return undefined;
+  };
+
+  // Get all unique categories from posts
+  const categories = new Set<string>();
+  sortedPosts.forEach(post => {
+    const category = detectCategory(post.id);
+    if (category) {
+      categories.add(category);
     }
   });
 
@@ -40,13 +53,7 @@ export const getStaticPaths = (async ({ paginate }) => {
   const paths: any = [];
   categories.forEach(category => {
     const categoryPosts = sortedPosts.filter(post => {
-      const slug = post.slug || post.id;
-      for (const [key, cat] of Object.entries(categoryMapping)) {
-        if (slug.includes(key) && cat === category) {
-          return true;
-        }
-      }
-      return false;
+      return detectCategory(post.id) === category;
     });
 
     if (categoryPosts.length > 0) {
