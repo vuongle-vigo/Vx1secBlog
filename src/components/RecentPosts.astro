@@ -4,7 +4,7 @@ import { getSortedPosts } from "@/utils/getSortedPosts";
 
 const allPosts = await getCollection("posts", ({ data }) => !data.draft);
 const sortedPosts = getSortedPosts(allPosts);
-const recentPosts = sortedPosts.slice(0, 5);
+const recentPosts = sortedPosts.slice(0, 10);
 ---
 
 {
