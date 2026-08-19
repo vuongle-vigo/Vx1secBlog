@@ -1,0 +1,123 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import BlogLayout from "@/components/BlogLayout.astro";
+import Card from "@/components/Card.astro";
+import Pagination from "@/components/Pagination.astro";
+import { getSortedPosts } from "@/utils/getSortedPosts";
+import config from "@/config";
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const posts = await getCollection("posts", ({ data }) => !data.draft);
+  const sortedPosts = getSortedPosts(posts);
+
+  // Category mapping (same as LeftSidebar)
+  const categoryMapping: Record<string, string> = {
+    "adding-new-post": "Documentation",
+    "how-to-configure": "Customization",
+    "dynamic-og-images": "Features",
+    "how-to-add-latex": "Tutorials",
+    "how-to-integrate-giscus": "Tutorials",
+    "how-to-update-dependencies": "Tutorials",
+    "setting-dates-via-git": "Tutorials",
+    "customizing-color-schemes": "Customization",
+  };
+
+  // Get all unique categories from posts using mapping
+  const categories = new Set<string>();
+  sortedPosts.forEach(post => {
+    const slug = post.slug || post.id;
+    for (const [key, cat] of Object.entries(categoryMapping)) {
+      if (slug.includes(key)) {
+        categories.add(cat);
+        break;
+      }
+    }
+  });
+
+  // Create paginated paths for each category
+  const paths: any = [];
+  categories.forEach(category => {
+    const categoryPosts = sortedPosts.filter(post => {
+      const slug = post.slug || post.id;
+      for (const [key, cat] of Object.entries(categoryMapping)) {
+        if (slug.includes(key) && cat === category) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (categoryPosts.length > 0) {
+      const paginatedPaths = paginate(categoryPosts, {
+        params: { category },
+        pageSize: config.posts.perPage,
+      });
+      paths.push(...paginatedPaths);
+    }
+  });
+
+  return paths;
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+const { category } = Astro.params;
+---
+
+<Layout title={`${category} | ${config.site.title}`}>
+  <BlogLayout headings={[]} showToc={false}>
+    <main id="main-content" class="category-content" data-pagefind-body>
+      <h1 class="page-title">
+        <span class="category-badge">{category}</span>
+      </h1>
+      <p class="page-desc">Posts in {category} category</p>
+
+      <div class="posts-grid">
+        {page.data.map(data => <Card {...data} />)}
+      </div>
+
+      <Pagination {page} />
+    </main>
+  </BlogLayout>
+
+</Layout>
+
+<style>
+  .category-content {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    width: 100%;
+  }
+
+  .page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--color-accent);
+  }
+
+  .category-badge {
+    background: rgba(var(--rgb-accent), 0.1);
+    border: 1px solid var(--color-accent);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .page-desc {
+    opacity: 0.7;
+    margin-bottom: 2rem;
+    font-style: italic;
+  }
+
+  .posts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+</style>

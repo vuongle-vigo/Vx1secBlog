@@ -1,0 +1,72 @@
+---
+import { getCollection } from "astro:content";
+import { getSortedPosts } from "@/utils/getSortedPosts";
+
+const allPosts = await getCollection("posts", ({ data }) => !data.draft);
+const sortedPosts = getSortedPosts(allPosts);
+const recentPosts = sortedPosts.slice(0, 5);
+---
+
+{
+  recentPosts.length > 0 && (
+    <div class="recent-posts-widget">
+      <h3 class="widget-title">Recent Posts</h3>
+      <ul class="recent-posts-list">
+        {recentPosts.map(post => {
+          const postSlug = post.slug || post.id;
+          return (
+            <li>
+              <a href={`/posts/${postSlug}`} class="recent-post-link">
+                {post.data.title}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  )
+}
+
+<style>
+  .recent-posts-widget {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .widget-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+    margin: 0;
+  }
+
+  .recent-posts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .recent-post-link {
+    display: block;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    border-left: 2px solid transparent;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .recent-post-link:hover {
+    color: var(--color-accent);
+    border-left-color: var(--color-accent);
+    padding-left: 1rem;
+  }
+</style>

@@ -1,0 +1,69 @@
+@import "tailwindcss";
+@import "./theme.css";
+@import "./typography.css";
+@import "rehype-callouts/theme/obsidian";
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@layer base {
+  * {
+    @apply border-border outline-accent/75;
+    scrollbar-width: auto;
+    scrollbar-color: var(--color-muted) transparent;
+  }
+  a,
+  button,
+  #main-content {
+    @apply outline-accent outline-offset-1 focus-visible:no-underline focus-visible:outline-2 focus-visible:outline-dashed;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@utility max-w-app {
+  @apply max-w-4xl;
+}
+
+@utility app-layout {
+  @apply max-w-app mx-auto w-full px-4;
+}
+
+@utility active-nav {
+  @apply underline decoration-wavy decoration-2 underline-offset-8;
+}
+
+:target {
+  scroll-margin-block: 1rem;
+}
+
+/* Blog layout scrollbar styling */
+.blog-rail-left::-webkit-scrollbar,
+.blog-rail-right::-webkit-scrollbar {
+  width: 6px;
+}
+
+.blog-rail-left::-webkit-scrollbar-track,
+.blog-rail-right::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.blog-rail-left::-webkit-scrollbar-thumb,
+.blog-rail-right::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.blog-rail-left::-webkit-scrollbar-thumb:hover,
+.blog-rail-right::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+/* Blog post content styling */
+.blog-post-content {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  width: 100%;
+}

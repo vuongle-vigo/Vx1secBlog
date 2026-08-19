@@ -1,0 +1,289 @@
+---
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getCollection } from "astro:content";
+import { useTranslations } from "@/i18n";
+import config from "@/config";
+import { stripBase, stripLocale } from "@/utils/withBase";
+import { getSortedPosts } from "@/utils/getSortedPosts";
+import Socials from "./Socials.astro";
+
+const locale = Astro.currentLocale ?? config.site.lang;
+const t = useTranslations(locale);
+
+const relativePath = stripBase(Astro.url.pathname);
+const pathWithoutTrailingSlash =
+  relativePath.endsWith("/") && relativePath !== "/"
+    ? relativePath.slice(0, -1)
+    : relativePath;
+
+const currentPath = stripLocale(pathWithoutTrailingSlash, locale);
+
+const isActive = (path: string) => {
+  const currentPathArray = currentPath.split("/").filter(p => p.trim());
+  const pathArray = path.split("/").filter(p => p.trim());
+  return currentPath === path || currentPathArray[0] === pathArray[0];
+};
+
+// Get all posts and extract categories
+const allPosts = await getCollection("posts", ({ data }) => !data.draft);
+const sortedPosts = getSortedPosts(allPosts);
+
+// Get unique categories with post count
+const categoryMapping: Record<string, string> = {
+  "adding-new-post": "Documentation",
+  "how-to-configure": "Customization",
+  "dynamic-og-images": "Features",
+  "how-to-add-latex": "Tutorials",
+  "how-to-integrate-giscus": "Tutorials",
+  "how-to-update-dependencies": "Tutorials",
+  "setting-dates-via-git": "Tutorials",
+  "customizing-color-schemes": "Customization",
+};
+
+const categoriesMap = new Map<string, number>();
+sortedPosts.forEach(post => {
+  const slug = post.slug || post.id;
+  let category: string | undefined;
+
+  for (const [key, cat] of Object.entries(categoryMapping)) {
+    if (slug.includes(key)) {
+      category = cat;
+      break;
+    }
+  }
+
+  if (category) {
+    const count = categoriesMap.get(category) || 0;
+    categoriesMap.set(category, count + 1);
+  }
+});
+
+// Sort categories by post count (descending)
+const categories = Array.from(categoriesMap.entries())
+  .sort((a, b) => b[1] - a[1]);
+---
+
+<nav class="sidebar-nav">
+  <!-- Site branding -->
+  <div class="sidebar-header">
+    <a href={getRelativeLocaleUrl(locale, "")} class="site-title-link">
+      <p class="site-title">{config.site.title}</p>
+    </a>
+    <p class="site-author">{config.site.author}</p>
+  </div>
+
+  <!-- Categories section -->
+  {
+    categories.length > 0 && (
+      <div class="nav-section">
+        <div class="nav-section-title">Categories</div>
+        <ul class="categories-list">
+          <li>
+            <a
+              href={getRelativeLocaleUrl(locale, "posts")}
+              class:list={["category-link", { active: isActive("/posts") }]}
+            >
+              All Posts
+              <span class="count">{sortedPosts.length}</span>
+            </a>
+          </li>
+          {categories.map(([category, count]) => (
+            <li>
+              <a
+                href={`/categories/${category}`}
+                class:list={[
+                  "category-link",
+                  { active: currentPath.includes(category) },
+                ]}
+              >
+                {category}
+                <span class="count">{count}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  <!-- Other pages -->
+  <div class="nav-section">
+    <div class="nav-section-title">More</div>
+    <ul class="nav-menu">
+      <li>
+        <a
+          href={getRelativeLocaleUrl(locale, "tags")}
+          class:list={["nav-link", { active: isActive("/tags") }]}
+        >
+          Tags
+        </a>
+      </li>
+      <li>
+        <a
+          href={getRelativeLocaleUrl(locale, "about")}
+          class:list={["nav-link", { active: isActive("/about") }]}
+        >
+          About
+        </a>
+      </li>
+      {
+        config.features.showArchives && (
+          <li>
+            <a
+              href={getRelativeLocaleUrl(locale, "archives")}
+              class:list={["nav-link", { active: isActive("/archives") }]}
+            >
+              Archives
+            </a>
+          </li>
+        )
+      }
+    </ul>
+  </div>
+
+  <!-- Social links -->
+  <div class="sidebar-socials">
+    <Socials />
+  </div>
+</nav>
+
+<style>
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 2rem;
+  }
+
+  .sidebar-header {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .site-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-accent);
+  }
+
+  .site-author {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    margin: 0.25rem 0 0 0;
+  }
+
+  .site-title-link {
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .site-title-link:hover .site-title {
+    opacity: 0.8;
+    transform: translateX(2px);
+  }
+
+  .nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .nav-section-title {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.5;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Categories list */
+  .categories-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .category-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .category-link:hover {
+    color: var(--color-accent);
+    border-left-color: var(--color-accent);
+    padding-left: 1rem;
+    background: rgba(var(--rgb-accent), 0.05);
+  }
+
+  .category-link.active {
+    color: var(--color-accent);
+    border-left-color: var(--color-accent);
+    background: rgba(var(--rgb-accent), 0.1);
+    padding-left: 1rem;
+  }
+
+  .category-link .count {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    background: rgba(var(--rgb-accent), 0.1);
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+  }
+
+  /* Navigation menu */
+  .nav-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    border-left: 2px solid transparent;
+    font-size: 0.9rem;
+  }
+
+  .nav-link:hover {
+    color: var(--color-accent);
+    border-left-color: var(--color-accent);
+    padding-left: 1rem;
+  }
+
+  .nav-link.active {
+    color: var(--color-accent);
+    border-left-color: var(--color-accent);
+    font-weight: 600;
+    padding-left: 1rem;
+  }
+
+  .sidebar-socials {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+</style>
