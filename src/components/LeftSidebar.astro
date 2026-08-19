@@ -42,12 +42,15 @@ const categoryMapping: Record<string, string> = {
 
 const categoriesMap = new Map<string, number>();
 sortedPosts.forEach(post => {
-  const slug = post.slug || post.id;
+  const slug = post.id;
   let category: string | undefined;
 
-  // Try to get category from post frontmatter first
-  if (post.data.category) {
-    category = post.data.category;
+  // Check for Malware Analysis (new posts have directory name "malware-development" or slug contains it)
+  if (slug.includes("malware") || slug.includes("payload") || slug.includes("injection") ||
+      slug.includes("syscall") || slug.includes("hooking") || slug.includes("obfuscation") ||
+      slug.includes("encryption") || slug.includes("sideload") || slug.includes("unhook") ||
+      slug.includes("iat") || slug.includes("macro") || slug.includes("bypass")) {
+    category = "Malware Analysis";
   } else {
     // Fall back to mapping for older posts
     for (const [key, cat] of Object.entries(categoryMapping)) {
